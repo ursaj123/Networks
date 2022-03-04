@@ -1,0 +1,55 @@
+import torch 
+import torch.nn as nn
+
+class VGG16(nn.Module):
+    def __init__(self, in_channels=3, num_classes=1000):
+        super(VGG16, self).__init__()
+        self.relu = nn.ReLU()
+        self.pool = nn.MaxPool2d(kernel_size=(2,2))
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=(3,3), padding=(1,1))        
+        self.conv2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=(3,3), padding=(1,1))   
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3,3), padding=(1,1))
+        self.conv4 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3,3), padding=(1,1))
+        self.conv5 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=(3,3), padding=(1,1))
+        self.conv6 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=(3,3), padding=(1,1))
+        self.conv7 = nn.Conv2d(in_channels=256, out_channels=512, kernel_size=(3,3), padding=(1,1))
+        self.conv8 = nn.Conv2d(in_channels=512, out_channels=512, kernel_size=(3,3), padding=(1,1))
+        self.fc1 = nn.Linear(512*7*7, 4096)
+        self.fc2 = nn.Linear(4096, 4096)
+        self.fc3 = nn.Linear(4096, num_classes)
+        self.dropout = nn.Dropout(p=0.5)
+         
+    def forward(self, x):  # (batch_size,3,224,224)
+        x = self.relu(self.conv1(x)) # (batch_size,64,224,224)
+        x = self.relu(self.conv2(x)) # (batch_size,64,224,224)
+        x = self.pool(x)             # (batch_size,64,112,112)
+        x = self.relu(self.conv3(x)) # (batch_size,128,112,112)
+        x = self.relu(self.conv4(x)) # (batch_size,128,112,112)
+        x = self.pool(x)             # (batch_size,128,56,56)
+        x = self.relu(self.conv5(x)) # (batch_size,256,56,56)
+        x = self.relu(self.conv6(x)) # (batch_size,256,56,56)
+        x = self.relu(self.conv6(x)) # (batch_size,256,56,56)
+        # x = self.relu(self.conv6(x)) # (batch_size,256,56,56)
+        x = self.pool(x)             # (batch_size,256,28,28)
+        x = self.relu(self.conv7(x)) # (batch_size,512,28,28)
+        x = self.relu(self.conv8(x)) # (batch_size,512,28,28)
+        x = self.relu(self.conv8(x)) # (batch_size,512,28,28)
+        # x = self.relu(self.conv8(x)) # (batch_size,512,28,28)
+        x = self.pool(x)             # (batch_size,512,14,14)
+        x = self.relu(self.conv8(x)) # (batch_size,512,14,14)
+        x = self.relu(self.conv8(x)) # (batch_size,512,14,14)
+        x = self.relu(self.conv8(x)) # (batch_size,512,14,14)
+        # x = self.relu(self.conv8(x)) # (batch_size,512,14,14)
+        x = self.pool(x)             # (batch_size,512,7,7)
+        # now the fully connected layer comes, first of all we have to flatten previous x keeping number of batches
+        x = x.reshape(x.shape[0],-1) #(batch_size,25088)
+        x = self.fc1(x)       
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
+        
+        
